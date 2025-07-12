@@ -22,5 +22,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u FROM User u WHERE u.lastLogin IS NULL OR u.lastLogin < :sevenDaysAgo")
     List<User> findInactiveUsers(@Param("sevenDaysAgo") LocalDateTime sevenDaysAgo);
+    List<User> findByIsActiveFalse();
 }
 
