@@ -10,11 +10,8 @@ import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.UserRepository;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import javax.transaction.Transactional;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -227,6 +224,34 @@ public class UserService {
     public void cleanUpFollowTracker() {
         long currentTime = System.currentTimeMillis();
         followTracker.entrySet().removeIf(entry -> currentTime - entry.getValue().timestamp > ONE_MINUTE);
+    }
+
+    //Brisanje svih neaktivnih usera na kraju meseca
+    // 0 h / 0 min / 0 sec / od 28-31 u mesecu / * - svaki mesec / ? - bilo koji dan u nedelji
+    @Scheduled(cron = "0 0 0 28-31 * ?")
+    @Transactional
+    public void deleteInactiveUsers() {
+        // Da li je poslednji dan u mesecu
+        Calendar calendar = Calendar.getInstance();
+        int today = calendar.get(Calendar.DAY_OF_MONTH);
+        int lastDay = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+        if (today != lastDay) {
+            return; // Nije poslednji dan
+        }
+
+        // Neaktivirani korisnici
+        List<User> inactiveUsers = userRepository.findByIsActiveFalse();
+
+        // Brisanje svih neaktivnih
+        for (User user : inactiveUsers) {
+            userRepository.delete(user);
+            System.out.println("Deleted inactive user: " + user.getEmail());
+        }
+
+        if (!inactiveUsers.isEmpty()) {
+            System.out.println("Total deleted inactive users: " + inactiveUsers.size());
+        }
     }
 
 
