@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import rs.ac.uns.ftn.informatika.jpa.dto.CommentDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.WriteCommentDTO;
+import rs.ac.uns.ftn.informatika.jpa.dto.*;
 import rs.ac.uns.ftn.informatika.jpa.mapper.CommentDTOMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.*;
 import rs.ac.uns.ftn.informatika.jpa.repository.CommentRepository;
@@ -162,5 +159,62 @@ public class PostService {
 
         return ResponseEntity.ok(response);
     }
+    @Transactional
+    public PostDTO updatePost(Long postId, PostDTO postDTO, MultipartFile file, Double latitude, Double longitude, String address) throws IOException {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
 
+        if (!post.getUser().getId().equals(postDTO.getUserId())) {
+            throw new RuntimeException("Unauthorized: You can only edit your own posts");
+        }
+
+        post.setDescription(postDTO.getDescription());
+
+        if (file != null && !file.isEmpty()) {
+            Long prevImageId = post.getImage().getId();
+            Image newImage = imageService.saveImage(file);
+            post.setImage(newImage);
+            imageService.deleteImage(prevImageId);
+        }
+
+        // Location update
+        Location location = locationService.createLocation(latitude, longitude, address);
+        Long locationId = post.getLocation().getId();
+        post.setLocation(location);
+        locationService.deleteLocation(locationId);
+
+
+        Post updatedPost = postRepository.save(post);
+        
+        postDTO.setId(updatedPost.getId());
+        if (updatedPost.getImage() != null) {
+            postDTO.setImageId(updatedPost.getImage().getId());
+        }
+
+        return postDTO;
+    }
+
+    @Transactional
+    public PostDetailDTO getPostDetails(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        Hibernate.initialize(post.getUser());
+        Hibernate.initialize(post.getLocation());
+        Hibernate.initialize(post.getImage());
+        Hibernate.initialize(post.getLikes());
+
+        return new PostDetailDTO(
+                post.getId(),
+                post.getDescription(),
+                post.getImage() != null ? post.getImage().getPath() : null,
+                post.getUser() != null ? post.getUser().getId() : null,
+                post.getUser() != null ? post.getUser().getUsername() : "Unknown",
+                post.getLocation() != null ? post.getLocation().getLatitude() : null,
+                post.getLocation() != null ? post.getLocation().getLongitude() : null,
+                post.getLocation() != null ? post.getLocation().getAddress() : null,
+                post.getCreatedTime(),
+                post.getLikes().size()
+        );
+    }
 }

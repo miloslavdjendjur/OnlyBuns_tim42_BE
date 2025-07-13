@@ -5,9 +5,11 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import rs.ac.uns.ftn.informatika.jpa.model.Image;
 import rs.ac.uns.ftn.informatika.jpa.model.Location;
 import rs.ac.uns.ftn.informatika.jpa.repository.LocationRepository;
 
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 

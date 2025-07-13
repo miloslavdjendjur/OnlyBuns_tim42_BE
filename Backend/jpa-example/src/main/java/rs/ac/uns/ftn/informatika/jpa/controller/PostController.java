@@ -6,17 +6,10 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.CommentDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.WriteCommentDTO;
-import rs.ac.uns.ftn.informatika.jpa.model.Image;
-import rs.ac.uns.ftn.informatika.jpa.model.Location;
+import rs.ac.uns.ftn.informatika.jpa.dto.*;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
-import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.service.*;
 import org.springframework.core.io.Resource;
 
@@ -24,7 +17,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -91,7 +83,7 @@ public class PostController {
         }
     }
 
-
+   //ovde bi trebalo da vraca PostDTO a ne post RELJJAAA
     @GetMapping("/{id}")
     public ResponseEntity<Post> getPostById(@PathVariable Long id) {
         Optional<Post> post = postService.getPostById(id);
@@ -125,4 +117,38 @@ public class PostController {
         //String response = postService.toggleLike(postId, userId);
         return postService.toggleLike(postId, userId);
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<PostDTO> updatePost(
+            @PathVariable Long id,
+            @RequestParam("description") String description,
+            @RequestParam("userId") Long userId,
+            @RequestParam("latitude") Double latitude,
+            @RequestParam("longitude") Double longitude,
+            @RequestParam("address") String address,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+
+        try {
+            PostDTO postDTO = new PostDTO();
+            postDTO.setId(id);
+            postDTO.setDescription(description);
+            postDTO.setUserId(userId);
+
+            PostDTO updatedPost = postService.updatePost(id, postDTO, file, latitude, longitude, address);
+            return ResponseEntity.ok(updatedPost);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    @GetMapping("/getPost/{id}")
+    public ResponseEntity<PostDetailDTO> getPostByPostId(@PathVariable Long id) {
+        try {
+            PostDetailDTO post = postService.getPostDetails(id);
+            return ResponseEntity.ok(post);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 }
