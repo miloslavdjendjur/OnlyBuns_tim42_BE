@@ -135,7 +135,10 @@ public class UserService {
             if (!user.getId().equals(adminId)) {
                 long postCount = postRepository.countByUserId(user.getId());
                 long followersCount = userFollowerRepository.countFollowers(user.getId());
-                showUserDTOs.add(userDTOMapper.fromUserToDTO(user, postCount, followersCount));
+                ShowUserDTO showUserDTO = userDTOMapper.fromUserToDTO(user, postCount, followersCount);
+                showUserDTO.setFollowerIds(userFollowerRepository.getAllFollowerIds(user.getId()));
+                showUserDTO.setFollowsPeople((int) userFollowerRepository.countHowManyPeopleFollowing(user.getId()));
+                showUserDTOs.add(showUserDTO);
             }
         }
         return showUserDTOs;
@@ -217,6 +220,7 @@ public class UserService {
             long postCount = postRepository.countByUserId(followUser.getId());
             long followersCount = userFollowerRepository.countFollowers(followUser.getId());
             ShowUserDTO userToReturn = userDTOMapper.fromUserToDTO(followUser, postCount, followersCount);
+            userToReturn.setFollowerIds(userFollowerRepository.getAllFollowerIds(userToFollow));
             return Optional.of(userToReturn);
         }
 

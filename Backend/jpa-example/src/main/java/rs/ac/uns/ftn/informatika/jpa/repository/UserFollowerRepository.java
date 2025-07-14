@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import rs.ac.uns.ftn.informatika.jpa.model.UserFollower;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface UserFollowerRepository extends JpaRepository<UserFollower, Long> {
@@ -25,5 +26,9 @@ public interface UserFollowerRepository extends JpaRepository<UserFollower, Long
     @Query("SELECT COUNT(uf) FROM UserFollower uf WHERE uf.user.id = :userId AND uf.followedSince > :since")
     long countNewFollowersSince(@Param("userId") Long userId, @Param("since") LocalDateTime since);
 
+    @Query("SELECT uf.follower.id FROM UserFollower uf WHERE uf.user.id = :userId")
+    List<Long> getAllFollowerIds(@Param("userId") Long userId);
 
+    @Query("SELECT COUNT(uf) FROM UserFollower uf WHERE uf.follower.id = :userId")
+    long countHowManyPeopleFollowing(@Param("userId") Long userId);
 }
