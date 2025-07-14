@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
@@ -27,4 +28,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("SELECT COUNT(p) FROM Post p WHERE p.user.id = :userId AND p.createdTime > :since")
     long countByUserIdAndCreatedTimeAfter(@Param("userId") Long userId, @Param("since") LocalDateTime since);
+
+    @Query("SELECT u.id, u.username, COUNT(p.id) FROM Post p JOIN p.likes u WHERE p.createdTime >= :sevenDaysAgo GROUP BY u.id, u.username ORDER BY COUNT(p.id) DESC ")
+    List<Object[]> findTopLikersInLast7Days(@Param("sevenDaysAgo") LocalDateTime sevenDaysAgo);
+
 }

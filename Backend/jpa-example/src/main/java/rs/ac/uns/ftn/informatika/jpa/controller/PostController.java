@@ -9,10 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.CommentDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.WriteCommentDTO;
+import rs.ac.uns.ftn.informatika.jpa.dto.*;
 import rs.ac.uns.ftn.informatika.jpa.model.Image;
 import rs.ac.uns.ftn.informatika.jpa.model.Location;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
@@ -125,4 +122,10 @@ public class PostController {
         //String response = postService.toggleLike(postId, userId);
         return postService.toggleLike(postId, userId);
     }
+
+    @GetMapping("/analytics/top-likers-last7days")
+    public ResponseEntity<List<UserLikeCountDTO>> getTopLikers() {
+        return ResponseEntity.ok(postService.getTopLikersInLast7Days());
+    }
+
 }

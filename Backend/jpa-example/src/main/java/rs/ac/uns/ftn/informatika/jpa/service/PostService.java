@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import rs.ac.uns.ftn.informatika.jpa.dto.CommentDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.PostDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.PostViewDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.WriteCommentDTO;
+import rs.ac.uns.ftn.informatika.jpa.dto.*;
 import rs.ac.uns.ftn.informatika.jpa.mapper.CommentDTOMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.*;
 import rs.ac.uns.ftn.informatika.jpa.repository.CommentRepository;
@@ -161,6 +158,19 @@ public class PostService {
         }
 
         return ResponseEntity.ok(response);
+    }
+
+    public List<UserLikeCountDTO> getTopLikersInLast7Days() {
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        List<Object[]> results = postRepository.findTopLikersInLast7Days(sevenDaysAgo);
+        return results.stream()
+                .map(row -> new UserLikeCountDTO(
+                        ((Number) row[0]).longValue(),
+                        (String) row[1],
+                        ((Number) row[2]).longValue()
+                ))
+                .limit(10)
+                .collect(Collectors.toList());
     }
 
 }
