@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
@@ -27,4 +28,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("SELECT COUNT(p) FROM Post p WHERE p.user.id = :userId AND p.createdTime > :since")
     long countByUserIdAndCreatedTimeAfter(@Param("userId") Long userId, @Param("since") LocalDateTime since);
+
+    long countByCreatedTimeAfter(LocalDateTime date);
+
+    @Query("SELECT DISTINCT p.user.id FROM Post p")
+    List<Long> findDistinctUserIds();
 }

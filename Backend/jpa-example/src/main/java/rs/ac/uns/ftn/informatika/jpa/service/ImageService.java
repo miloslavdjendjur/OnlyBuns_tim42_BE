@@ -1,11 +1,15 @@
 package rs.ac.uns.ftn.informatika.jpa.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import rs.ac.uns.ftn.informatika.jpa.model.Image;
+import rs.ac.uns.ftn.informatika.jpa.model.Location;
+import rs.ac.uns.ftn.informatika.jpa.model.Post;
 import rs.ac.uns.ftn.informatika.jpa.repository.ImageRepository;
 import javax.imageio.ImageIO;
+import javax.transaction.Transactional;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -99,6 +103,13 @@ public class ImageService {
                 e.printStackTrace();
             }
         }
+    }
+    @CacheEvict(value = "images", key = "#imageId")
+    public void deleteImage(Long imageId) {
+        Image image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new RuntimeException("Image not found"));
+
+        imageRepository.deleteById(imageId);
     }
 
 }
