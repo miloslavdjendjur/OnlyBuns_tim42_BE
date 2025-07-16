@@ -128,7 +128,7 @@ public class PostController {
         return ResponseEntity.ok(postService.getTopLikersInLast7Days());
     }
 
-    @GetMapping("/posts/nearby")
+    @GetMapping("/nearby")
     public ResponseEntity<List<PostMapDTO>> getNearbyPosts(
             @RequestParam double latitude,
             @RequestParam double longitude,
