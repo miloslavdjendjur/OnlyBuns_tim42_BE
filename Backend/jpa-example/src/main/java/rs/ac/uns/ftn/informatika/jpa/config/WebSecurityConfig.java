@@ -81,7 +81,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/users/followUserId/{id}",
                         "/api/users/sendWeeklySummaries/",
                         "/api/posts/analytics/top-likers-last7days",
-                        "/api/users/me"
+                        "/api/users/me",
+                        "/api/care-locations"
                 ).permitAll()
                 .anyRequest().authenticated();
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
