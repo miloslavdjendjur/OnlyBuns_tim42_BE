@@ -74,8 +74,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/users/followUserId/{id}",
                         "/api/users/sendWeeklySummaries/",
                         "/api/posts/getPost/{id}",
-                        "/api/analytics"
-                ).permitAll()
+                        "/api/analytics",
+                        "/api/chats/**",
+                        "/ws-chat/**",
+                        "/ws-chat"
+                        ).permitAll()
                 .anyRequest().authenticated();
     }
 
