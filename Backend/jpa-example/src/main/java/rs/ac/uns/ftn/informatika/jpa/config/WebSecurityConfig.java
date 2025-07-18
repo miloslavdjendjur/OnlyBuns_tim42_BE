@@ -81,7 +81,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/users/followUserId/{id}",
                         "/api/users/sendWeeklySummaries/",
                         "/api/posts/getPost/{id}",
-                        "/api/analytics"
+                        "/api/analytics",
                         "/api/posts/analytics/top-likers-last7days",
                         "/api/users/me",
                         "/api/care-locations"
