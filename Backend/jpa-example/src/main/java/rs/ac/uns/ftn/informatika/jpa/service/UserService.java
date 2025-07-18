@@ -87,6 +87,7 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    @Transactional
     public User registerUser(User user) {
         // Encrypt the password
         user.setPassword(passwordEncoder.encode(user.getPassword()));

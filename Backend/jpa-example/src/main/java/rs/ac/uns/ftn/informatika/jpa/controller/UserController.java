@@ -11,6 +11,7 @@ import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.UserProfileFullDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.CustomUserDetails;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
+import rs.ac.uns.ftn.informatika.jpa.service.BloomFilterService;
 import rs.ac.uns.ftn.informatika.jpa.service.UserService;
 
 import java.security.Principal;
@@ -24,6 +25,9 @@ import java.util.Optional;
 public class UserController {
 
     private final UserService userService;
+    @Autowired
+    private BloomFilterService bloomFilterService;
+
 
     @Autowired
     public UserController(UserService userService) {
@@ -121,6 +125,12 @@ public class UserController {
         CustomUserDetails userDetails = (CustomUserDetails) principal;
         User user = userDetails.getUser();
         return ResponseEntity.ok(new UserProfileFullDTO(user, new ArrayList<>()));
+    }
+
+    @GetMapping("/check-username")
+    public ResponseEntity<?> checkUsername(@RequestParam String username) {
+        boolean maybeExists = bloomFilterService.maybeUsernameExists(username);
+        return ResponseEntity.ok(maybeExists);
     }
 
 

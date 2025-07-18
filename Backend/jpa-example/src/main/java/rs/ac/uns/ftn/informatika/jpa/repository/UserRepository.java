@@ -26,5 +26,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByIsActiveFalse();
 
     long countByLastLoginAfter(LocalDateTime date);
+
+    @Query("SELECT u.username FROM User u")
+    List<String> findAllUsernames();
 }
 
