@@ -1,5 +1,6 @@
 package rs.ac.uns.ftn.informatika.jpa.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,12 +11,14 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.context.annotation.Primary;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import rs.ac.uns.ftn.informatika.jpa.service.CustomUserDetailsService;
+import rs.ac.uns.ftn.informatika.jpa.util.JwtAuthenticationFilter;
 
 import java.util.Arrays;
 
@@ -39,6 +42,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
     }
+
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
 
     @Bean
     @Primary
@@ -75,8 +82,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/users/sendWeeklySummaries/",
                         "/api/posts/getPost/{id}",
                         "/api/analytics"
+                        "/api/posts/analytics/top-likers-last7days",
+                        "/api/users/me",
+                        "/api/care-locations"
                 ).permitAll()
                 .anyRequest().authenticated();
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
     }
 
     /*

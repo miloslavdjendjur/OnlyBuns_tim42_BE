@@ -33,4 +33,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("SELECT DISTINCT p.user.id FROM Post p")
     List<Long> findDistinctUserIds();
+    @Query("SELECT u.id, u.username, COUNT(p.id) FROM Post p JOIN p.likes u WHERE p.createdTime >= :sevenDaysAgo GROUP BY u.id, u.username ORDER BY COUNT(p.id) DESC ")
+    List<Object[]> findTopLikersInLast7Days(@Param("sevenDaysAgo") LocalDateTime sevenDaysAgo);
+
+    @Query("SELECT p FROM Post p JOIN FETCH p.location JOIN FETCH p.user WHERE p.location IS NOT NULL")
+    List<Post> findAllWithLocation();
+
+
+
+
+
 }

@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import rs.ac.uns.ftn.informatika.jpa.dto.*;
+import rs.ac.uns.ftn.informatika.jpa.model.Image;
+import rs.ac.uns.ftn.informatika.jpa.model.Location;
 import rs.ac.uns.ftn.informatika.jpa.model.Post;
 import rs.ac.uns.ftn.informatika.jpa.service.*;
 import org.springframework.core.io.Resource;
@@ -150,5 +152,22 @@ public class PostController {
             return ResponseEntity.notFound().build();
         }
     }
+
+
+    @GetMapping("/analytics/top-likers-last7days")
+    public ResponseEntity<List<UserLikeCountDTO>> getTopLikers() {
+        return ResponseEntity.ok(postService.getTopLikersInLast7Days());
+    }
+
+    @GetMapping("/nearby")
+    public ResponseEntity<List<PostMapDTO>> getNearbyPosts(
+            @RequestParam double latitude,
+            @RequestParam double longitude,
+            @RequestParam(defaultValue = "10") double radiusKm) {
+
+        return ResponseEntity.ok(postService.findNearbyPosts(latitude, longitude, radiusKm));
+    }
+
+
 
 }

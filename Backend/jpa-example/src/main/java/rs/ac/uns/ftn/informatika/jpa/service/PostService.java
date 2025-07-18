@@ -217,4 +217,52 @@ public class PostService {
                 post.getLikes().size()
         );
     }
+    public List<UserLikeCountDTO> getTopLikersInLast7Days() {
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        List<Object[]> results = postRepository.findTopLikersInLast7Days(sevenDaysAgo);
+        return results.stream()
+                .map(row -> new UserLikeCountDTO(
+                        ((Number) row[0]).longValue(),
+                        (String) row[1],
+                        ((Number) row[2]).longValue()
+                ))
+                .limit(10)
+                .collect(Collectors.toList());
+    }
+
+    public List<PostMapDTO> findNearbyPosts(double lat, double lng, double radiusKm) {
+        List<Post> allPosts = postRepository.findAllWithLocation();
+        return allPosts.stream()
+                .filter(p -> p.getLocation() != null)
+                .filter(p -> distance(
+                        lat, lng,
+                        p.getLocation().getLatitude(),
+                        p.getLocation().getLongitude()
+                ) <= radiusKm)
+                .map(post -> {
+                    return new PostMapDTO(
+                            post.getId(),
+                            post.getDescription(),
+                            post.getUser().getUsername(),
+                            post.getLocation().getLatitude(),
+                            post.getLocation().getLongitude()
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    private double distance(double lat1, double lon1, double lat2, double lon2) {
+        double R = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat/2) * Math.sin(dLat/2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon/2) * Math.sin(dLon/2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+
+
+
 }

@@ -3,13 +3,18 @@ package rs.ac.uns.ftn.informatika.jpa.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import rs.ac.uns.ftn.informatika.jpa.dto.FilterCriteriaDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
+import rs.ac.uns.ftn.informatika.jpa.dto.UserProfileFullDTO;
+import rs.ac.uns.ftn.informatika.jpa.model.CustomUserDetails;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.service.UserService;
 
+import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -106,4 +111,20 @@ public class UserController {
         userService.sendWeeklySummaries();
         return ResponseEntity.ok("Weekly summaries sent successfully.");
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserProfileFullDTO> getMyProfile(@AuthenticationPrincipal Object principal) {
+        if (!(principal instanceof CustomUserDetails)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        CustomUserDetails userDetails = (CustomUserDetails) principal;
+        User user = userDetails.getUser();
+        return ResponseEntity.ok(new UserProfileFullDTO(user, new ArrayList<>()));
+    }
+
+
+
+
+
 }
