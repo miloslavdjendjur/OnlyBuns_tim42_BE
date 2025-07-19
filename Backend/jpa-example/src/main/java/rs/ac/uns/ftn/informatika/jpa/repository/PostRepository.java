@@ -1,5 +1,6 @@
 package rs.ac.uns.ftn.informatika.jpa.repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -39,7 +40,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p FROM Post p JOIN FETCH p.location JOIN FETCH p.user WHERE p.location IS NOT NULL")
     List<Post> findAllWithLocation();
 
+    @EntityGraph(attributePaths = {"user", "location"})
+    List<Post> findTop10ByOrderByLikesCountDesc();
 
+    @EntityGraph(attributePaths = {"user", "location"})
+    @Query("SELECT p FROM Post p WHERE p.createdTime >= :from ORDER BY p.likesCount DESC")
+    List<Post> findTop5ByCreatedTimeAfterOrderByLikesCountDesc(@Param("from") LocalDateTime from);
 
 
 

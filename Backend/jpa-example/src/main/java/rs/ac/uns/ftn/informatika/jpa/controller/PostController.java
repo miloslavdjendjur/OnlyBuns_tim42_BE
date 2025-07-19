@@ -168,6 +168,14 @@ public class PostController {
         return ResponseEntity.ok(postService.findNearbyPosts(latitude, longitude, radiusKm));
     }
 
+    @GetMapping("/analytics/top-posts-alltime")
+    public ResponseEntity<List<PostDetailDTO>> getTopPostsAllTime() {
+        return ResponseEntity.ok(postService.getTopPostsAllTimeDto());
+    }
 
+    @GetMapping("/analytics/top-posts-week")
+    public ResponseEntity<List<PostDetailDTO>> getTopPostsLastWeek() {
+        return ResponseEntity.ok(postService.getTopPostsLastWeekDto());
+    }
 
 }

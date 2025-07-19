@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import rs.ac.uns.ftn.informatika.jpa.dto.*;
 import rs.ac.uns.ftn.informatika.jpa.mapper.CommentDTOMapper;
+import rs.ac.uns.ftn.informatika.jpa.mapper.PostMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.*;
 import rs.ac.uns.ftn.informatika.jpa.repository.CommentRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
@@ -15,6 +16,8 @@ import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;import java.util.stream.Collectors;
+import org.springframework.cache.annotation.Cacheable;
+
 
 
 @Service
@@ -262,7 +265,24 @@ public class PostService {
         return R * c;
     }
 
+    @Cacheable("topPostsAllTime")
+    public List<PostDetailDTO> getTopPostsAllTimeDto() {
+        return postRepository.findTop10ByOrderByLikesCountDesc()
+                .stream()
+                .map(PostMapper::toPostDetailDTO)
+                .collect(Collectors.toList());
+    }
 
+    @Cacheable("topPostsLastWeek")
+    public List<PostDetailDTO> getTopPostsLastWeekDto() {
+        LocalDateTime oneWeekAgo = LocalDateTime.now().minusDays(7);
+        return postRepository.findTop5ByCreatedTimeAfterOrderByLikesCountDesc(oneWeekAgo)
+                .stream()
+                .sorted(Comparator.comparingInt(Post::getLikesCount).reversed())
+                .limit(5)
+                .map(PostMapper::toPostDetailDTO)
+                .collect(Collectors.toList());
+    }
 
 
 }
