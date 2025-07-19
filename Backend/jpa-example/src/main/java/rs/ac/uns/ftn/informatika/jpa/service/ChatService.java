@@ -2,19 +2,23 @@ package rs.ac.uns.ftn.informatika.jpa.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import rs.ac.uns.ftn.informatika.jpa.dto.ChatDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.CreateChatDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.MessageDTO;
+import rs.ac.uns.ftn.informatika.jpa.dto.UserRemovedDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.Chat;
+import rs.ac.uns.ftn.informatika.jpa.model.ChatParticipant;
 import rs.ac.uns.ftn.informatika.jpa.model.Message;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.repository.ChatRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.MessageRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +34,9 @@ public class ChatService {
     @Autowired
     private MessageRepository messageRepository;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     @Transactional
     public ChatDTO createChat(CreateChatDTO createChatDTO, Long creatorId) {
         User creator = userRepository.findById(creatorId)
@@ -40,17 +47,21 @@ public class ChatService {
         chat.setAdmin(creator);
 
         Set<User> participants = new HashSet<>();
+        Set<ChatParticipant> chatParticipants = new HashSet<>();
         participants.add(creator);
+        chatParticipants.add(new ChatParticipant(chat,creator));
 
         for (Long participantId : createChatDTO.getParticipantIds()) {
             if (!participantId.equals(creatorId)) {
                 User participant = userRepository.findById(participantId)
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participant not found"));
                 participants.add(participant);
+                chatParticipants.add(new ChatParticipant(chat,participant));
             }
         }
 
         chat.setParticipants(participants);
+        chat.setChatParticipants(chatParticipants);
 
         Chat savedChat = chatRepository.save(chat);
         return convertToChatDTO(savedChat, creatorId);
@@ -69,6 +80,7 @@ public class ChatService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         chat.getParticipants().add(userToAdd);
+        chat.getChatParticipants().add(new ChatParticipant(chat,userToAdd));
         chatRepository.save(chat);
     }
 
@@ -82,7 +94,11 @@ public class ChatService {
         }
 
         chat.getParticipants().removeIf(user -> user.getId().equals(userId));
+        chat.getChatParticipants().removeIf(cp -> cp.getUser().getId().equals(userId));
         chatRepository.save(chat);
+
+        UserRemovedDTO notification = new UserRemovedDTO(chatId, userId, "You have been removed from the chat");
+        messagingTemplate.convertAndSend("/topic/user/" + userId + "/removed", notification);
     }
     @Transactional
     public List<ChatDTO> getUserChats(Long userId) {
@@ -97,22 +113,25 @@ public class ChatService {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Chat not found"));
 
-        boolean isParticipant = chat.getParticipants().stream()
-                .anyMatch(user -> user.getId().equals(userId));
 
-        if (!isParticipant) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User is not a participant of this chat");
-        }
+        ChatParticipant participant = chat.getChatParticipants().stream()
+                .filter(cp -> cp.getUser().getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "User is not a participant"));
 
-        List<Message> messages = messageRepository.findByChatIdOrderByTimestampDesc(chatId);
-        return messages.stream()
-                .map(this::convertToMessageDTO)
-                .collect(Collectors.toList());
-    }
-    @Transactional
-    public List<MessageDTO> getLast10Messages(Long chatId) {
-        List<Message> messages = messageRepository.findLast10MessagesByChatId(chatId);
-        return messages.stream()
+        LocalDateTime joinedAt = participant.getJoinedAt();
+
+        // 10 poruka pre nego sto je usao, i ostale poruke
+        List<Message> messagesBefore = messageRepository.find10MessagesBeforeDate(chatId, joinedAt);
+        List<Message> messagesAfter = messageRepository.findMessagesAfterDate(chatId, joinedAt);
+
+        List<Message> allMessages = new ArrayList<>();
+        allMessages.addAll(messagesBefore);
+        allMessages.addAll(messagesAfter);
+
+        allMessages.sort(Comparator.comparing(Message::getTimestamp));
+
+        return allMessages.stream()
                 .map(this::convertToMessageDTO)
                 .collect(Collectors.toList());
     }
@@ -134,8 +153,24 @@ public class ChatService {
             dto.setLastMessage(convertToMessageDTO(messages.get(0)));
         }
 
-        int unreadCount = messageRepository.findUnreadMessages(chat.getId(), currentUserId).size();
-        dto.setUnreadCount(unreadCount);
+       // int unreadCount = messageRepository.findUnreadMessages(chat.getId(), currentUserId).size();
+       // dto.setUnreadCount(unreadCount);
+        ChatParticipant participant = chat.getChatParticipants().stream()
+                .filter(cp -> cp.getUser().getId().equals(currentUserId))
+                .findFirst()
+                .orElse(null);
+
+        if (participant != null) {
+            LocalDateTime joinedAt = participant.getJoinedAt();
+
+            List<Message> unreadBefore = messageRepository.find10UnreadMessagesBeforeJoining(chat.getId(), currentUserId, joinedAt);
+            List<Message> unreadAfter = messageRepository.findUnreadMessagesAfterJoining(chat.getId(), currentUserId, joinedAt);
+
+            int unreadCount = unreadBefore.size() + unreadAfter.size();
+            dto.setUnreadCount(unreadCount);
+        } else {
+            dto.setUnreadCount(0);
+        }
 
         return dto;
     }

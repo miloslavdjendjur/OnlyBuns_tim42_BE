@@ -19,9 +19,12 @@ public class Chat {
     @JoinColumn(name = "admin_id", nullable = false)
     private User admin;
 
+    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ChatParticipant> chatParticipants = new HashSet<>();
+
     @ManyToMany
     @JoinTable(
-            name = "chat_participants",
+            name = "chat_participants_legacy",
             joinColumns = @JoinColumn(name = "chat_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
@@ -83,5 +86,13 @@ public class Chat {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Set<ChatParticipant> getChatParticipants() {
+        return chatParticipants;
+    }
+
+    public void setChatParticipants(Set<ChatParticipant> chatParticipants) {
+        this.chatParticipants = chatParticipants;
     }
 }

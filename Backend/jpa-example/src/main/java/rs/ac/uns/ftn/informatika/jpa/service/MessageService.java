@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import rs.ac.uns.ftn.informatika.jpa.dto.MessageDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.Chat;
+import rs.ac.uns.ftn.informatika.jpa.model.ChatParticipant;
 import rs.ac.uns.ftn.informatika.jpa.model.Message;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.repository.ChatRepository;
@@ -15,6 +16,8 @@ import rs.ac.uns.ftn.informatika.jpa.repository.MessageRepository;
 import rs.ac.uns.ftn.informatika.jpa.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -64,9 +67,27 @@ public class MessageService {
 
     @Transactional
     public void markMessagesAsRead(Long chatId, Long userId) {
-        List<Message> unreadMessages = messageRepository.findUnreadMessages(chatId, userId);
-        unreadMessages.forEach(message -> message.setRead(true));
-        messageRepository.saveAll(unreadMessages);
+        Chat chat = chatRepository.findById(chatId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Chat not found"));
+        ChatParticipant participant = chat.getChatParticipants().stream()
+                .filter(cp -> cp.getUser().getId().equals(userId))
+                .findFirst()
+                .orElse(null);
+
+        List<Message> unreadBefore = new ArrayList<>();
+        List<Message> unreadAfter = new ArrayList<>();
+        if (participant != null){
+            LocalDateTime joinedAt = participant.getJoinedAt();
+            unreadBefore = messageRepository.find10UnreadMessagesBeforeJoining(chat.getId(), userId, joinedAt);
+            unreadAfter = messageRepository.findUnreadMessagesAfterJoining(chat.getId(), userId, joinedAt);
+        }
+        List<Message> allMessages = new ArrayList<>();
+        allMessages.addAll(unreadBefore);
+        allMessages.addAll(unreadAfter);
+        allMessages.forEach(message -> message.setRead(true));
+
+       // List<Message> unreadMessages = messageRepository.findUnreadMessages(chatId, userId);
+        //unreadMessages.forEach(message -> message.setRead(true));
+        messageRepository.saveAll(allMessages);
     }
 
     private MessageDTO convertToMessageDTO(Message message) {
