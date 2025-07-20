@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import rs.ac.uns.ftn.informatika.jpa.dto.FilterCriteriaDTO;
+import rs.ac.uns.ftn.informatika.jpa.dto.PageDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 import rs.ac.uns.ftn.informatika.jpa.service.UserService;
@@ -61,16 +62,20 @@ public class UserController {
         return ResponseEntity.ok(showUserDTOs);
     }
     @PostMapping("/filter/{id}")
-    public ResponseEntity<List<ShowUserDTO>> filterUsers(@PathVariable Long id, @RequestBody FilterCriteriaDTO criteria) {
+    public ResponseEntity<PageDTO<ShowUserDTO>> filterUsers(@PathVariable Long id, @RequestBody FilterCriteriaDTO criteria) {
 
-        List<ShowUserDTO> filteredUsers = userService.filterUsers
-        (id,Optional.ofNullable(criteria.getName()),
+        PageDTO<ShowUserDTO> filteredUsers = userService.filterUsersWithPagination(
+                id,
+                Optional.ofNullable(criteria.getName()),
                 Optional.ofNullable(criteria.getSurname()),
                 Optional.ofNullable(criteria.getEmail()),
                 Optional.ofNullable(criteria.getMinPosts()),
                 Optional.ofNullable(criteria.getMaxPosts()),
                 Optional.ofNullable(criteria.getSortField()),
-                Optional.ofNullable(criteria.getSortOrder()));
+                Optional.ofNullable(criteria.getSortOrder()),
+                criteria.getPage(),
+                criteria.getSize()
+        );
         return ResponseEntity.ok(filteredUsers);
     }
 

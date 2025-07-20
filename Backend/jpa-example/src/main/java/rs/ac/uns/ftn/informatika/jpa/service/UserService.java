@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import rs.ac.uns.ftn.informatika.jpa.dto.PageDTO;
 import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
 import rs.ac.uns.ftn.informatika.jpa.mapper.UserDTOMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
@@ -144,18 +145,19 @@ public class UserService {
         return showUserDTOs;
     }
 
-    public List<ShowUserDTO> filterUsers(Long adminId, Optional<String> name, Optional<String> surname, Optional<String> email,
-                                         Optional<Integer> minPosts, Optional<Integer> maxPosts,
-                                         Optional<String> sortField, Optional<String> sortOrder) {
-        List<ShowUserDTO> showUserDTOs = getAllUsers(adminId);
+    public PageDTO<ShowUserDTO> filterUsersWithPagination(Long adminId, Optional<String> name,
+                                                          Optional<String> surname, Optional<String> email,
+                                                          Optional<Integer> minPosts, Optional<Integer> maxPosts,
+                                                          Optional<String> sortField, Optional<String> sortOrder,
+                                                          int page, int size) {
+        List<ShowUserDTO> allUsers = getAllUsers(adminId);
 
-        return showUserDTOs.stream()
+        List<ShowUserDTO> filteredUsers = allUsers.stream()
                 .filter(user -> name.map(n -> user.getFullName().toLowerCase().contains(n.toLowerCase())).orElse(true))
                 .filter(user -> surname.map(s -> user.getFullName().toLowerCase().contains(s.toLowerCase())).orElse(true))
                 .filter(user -> email.map(e -> user.getEmail().toLowerCase().contains(e.toLowerCase())).orElse(true))
                 .filter(user -> minPosts.map(min -> user.getPostNumber() >= min).orElse(true))
                 .filter(user -> maxPosts.map(max -> user.getPostNumber() <= max).orElse(true))
-
                 .sorted((u1, u2) -> {
                     if (!sortField.isPresent()) return 0;
                     int direction = sortOrder.orElse("asc").equalsIgnoreCase("asc") ? 1 : -1;
@@ -170,6 +172,15 @@ public class UserService {
                     }
                 })
                 .collect(Collectors.toList());
+
+        // Paginacija
+        int totalElements = filteredUsers.size();
+        int fromIndex = page * size;
+        int toIndex = Math.min(fromIndex + size, totalElements);
+
+        List<ShowUserDTO> paginatedUsers = filteredUsers.subList(fromIndex, toIndex);
+
+        return new PageDTO<>(paginatedUsers, page, size, totalElements);
     }
 
     public boolean emailExists(String email) {
