@@ -30,7 +30,7 @@ public class JpaExampleApplicationTests {
 
 	@Autowired
 	private PostService postService;
-	
+
 	@Autowired
 	private UserService userService;
 
