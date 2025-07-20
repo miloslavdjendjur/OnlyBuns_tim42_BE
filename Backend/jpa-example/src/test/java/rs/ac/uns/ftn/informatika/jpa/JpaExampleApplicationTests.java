@@ -30,11 +30,10 @@ public class JpaExampleApplicationTests {
 
 	@Autowired
 	private PostService postService;
+	
 	@Autowired
 	private UserService userService;
 
-	@Autowired
-	private UserService userService;
 
 	@Autowired
 	private UserRepository userRepository;
@@ -121,6 +120,7 @@ public class JpaExampleApplicationTests {
 		System.out.println("Rezultat 2: " + r2);
 
 		assert (r1.equals("SUCCESS") && r2.equals("FAIL")) || (r1.equals("FAIL") && r2.equals("SUCCESS"));
+	}
 	@Test
 	public void testConcurrentFollowSameUser() throws InterruptedException {
 		User targetUser = new User();
