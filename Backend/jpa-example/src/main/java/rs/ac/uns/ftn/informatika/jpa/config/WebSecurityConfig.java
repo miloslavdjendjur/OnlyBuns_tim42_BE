@@ -87,7 +87,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/care-locations",
                         "/api/posts/nearby",
                         "/api/posts/analytics/top-posts-week",
-                        "/api/posts/analytics/top-posts-alltime"
+                        "/api/posts/analytics/top-posts-alltime",
+                        "/api/users/profile/{id}",
+                        "/api/users/change-password"
                 ).permitAll()
                 .anyRequest().authenticated();
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

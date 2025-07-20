@@ -6,11 +6,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import rs.ac.uns.ftn.informatika.jpa.dto.FilterCriteriaDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.ShowUserDTO;
-import rs.ac.uns.ftn.informatika.jpa.dto.UserProfileFullDTO;
+import rs.ac.uns.ftn.informatika.jpa.dto.*;
+import rs.ac.uns.ftn.informatika.jpa.mapper.PostMapper;
 import rs.ac.uns.ftn.informatika.jpa.model.CustomUserDetails;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
+import rs.ac.uns.ftn.informatika.jpa.repository.PostRepository;
 import rs.ac.uns.ftn.informatika.jpa.service.BloomFilterService;
 import rs.ac.uns.ftn.informatika.jpa.service.UserService;
 
@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -28,6 +29,8 @@ public class UserController {
     @Autowired
     private BloomFilterService bloomFilterService;
 
+    @Autowired
+    private PostRepository postRepository;
 
     @Autowired
     public UserController(UserService userService) {
@@ -131,6 +134,43 @@ public class UserController {
     public ResponseEntity<?> checkUsername(@RequestParam String username) {
         boolean maybeExists = bloomFilterService.maybeUsernameExists(username);
         return ResponseEntity.ok(maybeExists);
+    }
+
+    @GetMapping("/profile/{id}")
+    public ResponseEntity<UserProfileFullDTO> getProfile(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Object principal) {
+
+        if (!(principal instanceof CustomUserDetails)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        CustomUserDetails userDetails = (CustomUserDetails) principal;
+        Long loggedInUserId = userDetails.getUser().getId();
+
+        User user = userService.getUserById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        List<PostDetailDTO> posts = postRepository.findByUserId(id)
+                .stream()
+                .map(PostMapper::toPostDetailDTO)
+                .collect(Collectors.toList());
+
+        UserProfileFullDTO dto = new UserProfileFullDTO(user, posts);
+        dto.setEditable(loggedInUserId.equals(id));
+
+        return ResponseEntity.ok(dto);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@RequestBody PasswordDTO dto, @AuthenticationPrincipal Object principal) {
+        if (!(principal instanceof CustomUserDetails)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        CustomUserDetails userDetails = (CustomUserDetails) principal;
+        userService.changePassword(userDetails.getUser(), dto.getNewPassword());
+        return ResponseEntity.ok().build();
     }
 
 

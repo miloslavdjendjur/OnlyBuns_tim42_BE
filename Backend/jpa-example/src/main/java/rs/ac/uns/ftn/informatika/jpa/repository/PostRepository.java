@@ -47,6 +47,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p FROM Post p WHERE p.createdTime >= :from ORDER BY p.likesCount DESC")
     List<Post> findTop5ByCreatedTimeAfterOrderByLikesCountDesc(@Param("from") LocalDateTime from);
 
-
+    @EntityGraph(attributePaths = {"user", "location"})
+    List<Post> findByUserId(Long userId);
 
 }
