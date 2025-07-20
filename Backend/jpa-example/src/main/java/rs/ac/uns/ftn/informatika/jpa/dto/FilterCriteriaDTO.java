@@ -9,6 +9,8 @@ public class FilterCriteriaDTO {
     private Integer maxPosts;
     private String sortField;
     private String sortOrder;
+    private int page = 0;
+    private int size = 5;
 
     public FilterCriteriaDTO(Long adminId,String name, String surname, String email, Integer minPosts, Integer maxPosts, String sortField,String sortOrder) {
         this.adminId = adminId;
@@ -69,4 +71,19 @@ public class FilterCriteriaDTO {
         this.sortOrder = sortOrder;
     }
 
+    public int getPage() {
+        return page;
+    }
+
+    public void setPage(int page) {
+        this.page = page;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
 }
