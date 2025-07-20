@@ -89,8 +89,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/posts/analytics/top-posts-week",
                         "/api/posts/analytics/top-posts-alltime",
                         "/api/users/profile/{id}",
-                        "/api/users/change-password"
-                ).permitAll()
+                        "/api/users/change-password",
+                        "/api/chats/**",
+                        "/ws-chat/**",
+                        "/ws-chat"
+                        ).permitAll()
                 .anyRequest().authenticated();
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
