@@ -1,122 +1,129 @@
 package rs.ac.uns.ftn.informatika.jpa.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.context.annotation.Primary;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
 import rs.ac.uns.ftn.informatika.jpa.service.CustomUserDetailsService;
 import rs.ac.uns.ftn.informatika.jpa.util.JwtAuthenticationFilter;
+import rs.ac.uns.ftn.informatika.jpa.metrics.ActiveUserTrackingFilter;
 
-import java.util.Arrays;
-
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+public class WebSecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ActiveUserTrackingFilter activeUserTrackingFilter;
 
-    public WebSecurityConfig(CustomUserDetailsService userDetailsService) {
+    public WebSecurityConfig(CustomUserDetailsService userDetailsService,
+                             JwtAuthenticationFilter jwtAuthenticationFilter,
+                             ActiveUserTrackingFilter activeUserTrackingFilter) {
         this.userDetailsService = userDetailsService;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.activeUserTrackingFilter = activeUserTrackingFilter;
     }
+
+    /* ===== Auth beans ===== */
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+    // DaoAuthenticationProvider direktno koristi tvoj CustomUserDetailsService
+    @Bean
+    public DaoAuthenticationProvider daoAuthenticationProvider(PasswordEncoder encoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(encoder);
+        return provider;
     }
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-
-
+    // AuthenticationManager za AuthController (idiomatski u 2.7)
     @Bean
     @Primary
-    @Override
-    public AuthenticationManager authenticationManagerBean() throws Exception {
-        return super.authenticationManagerBean();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
     }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.cors().and()  // Enable CORS
-                .csrf().disable()
-                .authorizeRequests()
-                // samo ADMIN sme da menja ad-eligible
-                .antMatchers(org.springframework.http.HttpMethod.PUT, "/api/posts/*/ad-eligible").hasRole("ADMIN")
-                // ostali public endpointi
-                .antMatchers(
-                        "/api/auth/register",
-                        "/api/auth/login",
-                        "/api/auth/activate",
-                        "/api/posts/all",
-                        "/api/posts/all?userId=*",
-                        "/api/posts/all-comments/{id}",
-                        "/api/posts/{id}",
-                        "/api/posts/add-comment",
-                        "/api/locations/",
-                        "/api/locations/{id}",
-                        "/api/posts/like/{postId}",
-                        "/api/posts",
-                        "/api/users/all/{id}",
-                        "/api/users/filter/{id}",
-                        "/images/**",
-                        "/api/users/{id}",
-                        "/api/users/show/{id}",
-                        "/api/users/followUser/{id}",
-                        "/api/users/followUserId/{id}",
-                        "/api/users/sendWeeklySummaries/",
-                        "/api/posts/getPost/{id}",
-                        "/api/analytics",
-                        "/api/posts/analytics/top-likers-last7days",
-                        "/api/users/me",
-                        "/api/care-locations",
-                        "/api/posts/nearby",
-                        "/api/posts/analytics/top-posts-week",
-                        "/api/posts/analytics/top-posts-alltime",
-                        "/api/users/profile/{id}",
-                        "/api/users/change-password",
-                        "/api/chats/**",
-                        "/ws-chat/**",
-                        "/ws-chat"
-                        ).permitAll()
-                .anyRequest().authenticated();
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+    /* ===== Glavni Security lanac ===== */
 
-    }
-
-    /*
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*")); // Allow all headers
-        configuration.setAllowCredentials(true); // Allow credentials
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           DaoAuthenticationProvider daoAuthenticationProvider) throws Exception {
+        http
+                .cors().and()
+                .csrf().disable()
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(daoAuthenticationProvider)
+                .authorizeHttpRequests(auth -> auth
+                        // admin: menjanje ad-eligible
+                        .antMatchers(org.springframework.http.HttpMethod.PUT, "/api/posts/*/ad-eligible").hasRole("ADMIN")
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }*/
+                        // otvoreni endpointi (ostavljeno kako imaš)
+                        .antMatchers(
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/api/auth/activate",
+                                "/api/posts/all",
+                                "/api/posts/all?userId=*",
+                                "/api/posts/all-comments/{id}",
+                                "/api/posts/{id}",
+                                "/api/posts/add-comment",
+                                "/api/locations/",
+                                "/api/locations/{id}",
+                                "/api/posts/like/{postId}",
+                                "/api/posts",
+                                "/api/users/all/{id}",
+                                "/api/users/filter/{id}",
+                                "/images/**",
+                                "/api/users/{id}",
+                                "/api/users/show/{id}",
+                                "/api/users/followUser/{id}",
+                                "/api/users/followUserId/{id}",
+                                "/api/users/sendWeeklySummaries/",
+                                "/api/posts/getPost/{id}",
+                                "/api/analytics",
+                                "/api/posts/analytics/top-likers-last7days",
+                                "/api/users/me",
+                                "/api/care-locations",
+                                "/api/posts/nearby",
+                                "/api/posts/analytics/top-posts-week",
+                                "/api/posts/analytics/top-posts-alltime",
+                                "/api/users/profile/{id}",
+                                "/api/users/change-password",
+                                "/api/chats/**",
+                                "/ws-chat/**",
+                                "/ws-chat",
+                                "/actuator/**"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
+                .httpBasic(withDefaults());
 
-    // Step 2: Define a global CORS configuration
+        // redosled filtera
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(activeUserTrackingFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    /* ===== Globalni CORS ===== */
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
@@ -130,6 +137,4 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             }
         };
     }
-
-
 }

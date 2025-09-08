@@ -1,5 +1,6 @@
 package rs.ac.uns.ftn.informatika.jpa.controller;
 
+import io.micrometer.core.annotation.Timed;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.UrlResource;
@@ -38,6 +39,7 @@ public class PostController {
     }
 
     @PostMapping
+    @Timed(value = "post.create", description = "Time to create a new post", histogram = true)
     public ResponseEntity<PostDTO> createPost(
             @RequestParam("description") String description,
             @RequestParam("file") MultipartFile file,
