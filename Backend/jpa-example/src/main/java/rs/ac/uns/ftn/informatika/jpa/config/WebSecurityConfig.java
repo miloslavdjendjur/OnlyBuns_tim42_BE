@@ -59,6 +59,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         http.cors().and()  // Enable CORS
                 .csrf().disable()
                 .authorizeRequests()
+                // samo ADMIN sme da menja ad-eligible
+                .antMatchers(org.springframework.http.HttpMethod.PUT, "/api/posts/*/ad-eligible").hasRole("ADMIN")
+                // ostali public endpointi
                 .antMatchers(
                         "/api/auth/register",
                         "/api/auth/login",

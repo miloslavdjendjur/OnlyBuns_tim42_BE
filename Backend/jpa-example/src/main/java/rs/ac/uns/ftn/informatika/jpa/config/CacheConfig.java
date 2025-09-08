@@ -15,6 +15,6 @@ public class CacheConfig {
     @Primary
     public CacheManager cacheManager() {
         return new ConcurrentMapCacheManager("locations", "topPostsAllTime", "topPostsLastWeek");
-        // pozdrav za kolegu Miloslava koji je ovo dodao i nije mi rekao i onda mi nije radilo kreiranje lokacija
+        // pozdrav za kolegu Miloslava koji je ovo dodao i nije mi rekao i onda mi nije radilo kreiranje posta
     }
 }

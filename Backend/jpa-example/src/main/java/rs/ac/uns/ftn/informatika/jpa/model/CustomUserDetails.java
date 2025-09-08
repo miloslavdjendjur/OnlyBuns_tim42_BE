@@ -1,9 +1,11 @@
 package rs.ac.uns.ftn.informatika.jpa.model;
 
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import rs.ac.uns.ftn.informatika.jpa.model.User;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Collection;
 
@@ -16,11 +18,6 @@ public class CustomUserDetails implements UserDetails {
 
     public User getUser() {
         return user;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return user.getRole() != null ? List.of(() -> user.getRole().name()) : List.of();
     }
 
     @Override
@@ -51,5 +48,11 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public boolean isEnabled() {
         return user.getActive();
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        String roleName = user.getRole().name();
+        return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 }

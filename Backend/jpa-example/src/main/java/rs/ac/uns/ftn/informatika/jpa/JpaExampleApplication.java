@@ -14,8 +14,14 @@ public class JpaExampleApplication {
 	public ModelMapper getModelMapper() {
 		return new ModelMapper();
 	}
-	
+
 	public static void main(String[] args) {
+		// >>> FORSIRAJ CloudAMQP ovde <<<
+		System.setProperty(
+				"spring.rabbitmq.uri",
+				"amqps://wyvanzbe:t_gF8mkk4Tv029I83APEIHGbSW1b-es5@kebnekaise.lmq.cloudamqp.com/wyvanzbe"
+		);
+
 		SpringApplication.run(JpaExampleApplication.class, args);
 	}
 

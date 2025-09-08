@@ -18,8 +18,6 @@ import java.time.LocalDateTime;
 import java.util.*;import java.util.stream.Collectors;
 import org.springframework.cache.annotation.Cacheable;
 
-
-
 @Service
 public class PostService {
 
@@ -29,6 +27,9 @@ public class PostService {
     private final LocationService locationService;
     private final CommentService commentService;
     private final CommentDTOMapper commentDTOMapper;
+
+    @Autowired
+    private AdvertisingService advertisingService;
 
     @Autowired
     public PostService(PostRepository postRepository, UserService userService, LocationService locationService,
@@ -284,5 +285,23 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public Post setAdEligible(Long postId, boolean adEligible) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
 
+        post.setAdEligible(adEligible);
+        Post saved = postRepository.save(post);
+
+        if (adEligible) {
+            AdPostMessage msg = new AdPostMessage(
+                    saved.getDescription(),       // prilagodi nazivu tvog polja
+                    saved.getCreatedTime(),       // prilagodi nazivu tvog timestamp polja
+                    saved.getUser().getUsername() // pretpostavljam da User ima username
+            );
+            advertisingService.publish(msg);
+        }
+
+        return saved;
+    }
 }

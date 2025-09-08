@@ -53,6 +53,7 @@ public class Post {
     @Column(nullable = false)
     private int likesCount = 0;
 
+
     public int getLikesCount() {
         return likesCount;
     }
@@ -60,6 +61,12 @@ public class Post {
     public void setLikesCount(int likesCount) {
         this.likesCount = likesCount;
     }
+
+    @Column(nullable = false)
+    private boolean adEligible = false;
+
+    public boolean isAdEligible() { return adEligible; }
+    public void setAdEligible(boolean adEligible) { this.adEligible = adEligible; }
 
     public Post() {}
 

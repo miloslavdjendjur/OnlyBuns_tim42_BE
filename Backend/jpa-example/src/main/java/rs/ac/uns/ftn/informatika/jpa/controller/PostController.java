@@ -6,6 +6,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import rs.ac.uns.ftn.informatika.jpa.dto.*;
@@ -56,8 +57,6 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-
 
     @Value("${app.image.upload-dir}")
     private String uploadDir;
@@ -178,4 +177,13 @@ public class PostController {
         return ResponseEntity.ok(postService.getTopPostsLastWeekDto());
     }
 
+    @PutMapping(path = "/{id}/ad-eligible", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PostAdEligibleResponse> setAdEligible(
+            @PathVariable Long id,
+            @RequestBody AdEligibleRequest req) {
+
+        Post post = postService.setAdEligible(id, req.isEligible());
+        return ResponseEntity.ok(new PostAdEligibleResponse(post.getId(), post.isAdEligible()));
+    }
 }
