@@ -10,6 +10,7 @@ import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,10 +51,18 @@ public class RabbitAgencyConfig {
 
     @Bean
     public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
-        ObjectMapper om = new ObjectMapper();
-        om.registerModule(new JavaTimeModule());
-        om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        return new Jackson2JsonMessageConverter(om);
+        ObjectMapper om = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        Jackson2JsonMessageConverter conv = new Jackson2JsonMessageConverter(om);
+
+        DefaultClassMapper cm = new DefaultClassMapper();
+        cm.setTrustedPackages("*"); // ili tvoj paket
+        cm.setDefaultType(rs.ac.uns.ftn.informatika.jpa.dto.AdPostMessage.class);
+        conv.setClassMapper(cm);
+
+        return conv;
     }
 
     // Default factory koji @RabbitListener koristi

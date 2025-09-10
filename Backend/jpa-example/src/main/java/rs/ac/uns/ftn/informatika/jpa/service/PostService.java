@@ -295,9 +295,9 @@ public class PostService {
 
         if (adEligible) {
             AdPostMessage msg = new AdPostMessage(
-                    saved.getDescription(),       // prilagodi nazivu tvog polja
-                    saved.getCreatedTime(),       // prilagodi nazivu tvog timestamp polja
-                    saved.getUser().getUsername() // pretpostavljam da User ima username
+                    saved.getDescription(),
+                    saved.getCreatedTime(),
+                    saved.getUser().getUsername()
             );
             advertisingService.publish(msg);
         }
